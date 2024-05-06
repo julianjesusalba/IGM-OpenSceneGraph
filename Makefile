@@ -8,3 +8,5 @@ all: cubo
 cubo: cubo.cpp
 	$(CXX) -o $@ $< $(CXXFLAGS)
 
+clean:
+	rm -f *.exe
