@@ -6,16 +6,19 @@
 #include <osg/MatrixTransform>
 
 int main() {
-    // Creamos un nodo Geode
-    osg::ref_ptr<osg::Geode> geode = new osg::Geode();
 
-    // Creamos un cubo utilizando ShapeDrawable
+    // Creamos el nodo raíz
+    osg::ref_ptr<osg::Group> root = new osg::Group;
+
+    // Creamos los cubo utilizando ShapeDrawable y Box
     osg::ref_ptr<osg::ShapeDrawable> cubeDrawable = new osg::ShapeDrawable(new osg::Box(osg::Vec3(), 1.0f));
+    osg::ref_ptr<osg::ShapeDrawable> cubeDrawable2 = new osg::ShapeDrawable(new osg::Box(osg::Vec3(), 0.8f));
 
-    // Creamos el estado para los colores
+    // Creamos los estados para los colores
     osg::ref_ptr<osg::StateSet> stateSet = cubeDrawable->getOrCreateStateSet();
+    osg::ref_ptr<osg::StateSet> stateSet2 = cubeDrawable->getOrCreateStateSet();
 
-    // Añadimos un color a las caras del cubo
+    // Añadimos los colores a las caras de los cubos
     osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
     colors->push_back(osg::Vec4(1.0f, 0.0f, 0.0f, 1.0f)); // Rojo
     colors->push_back(osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f)); // Verde
@@ -25,51 +28,67 @@ int main() {
     colors->push_back(osg::Vec4(0.0f, 1.0f, 1.0f, 1.0f)); // Cyan
     cubeDrawable->setColorArray(colors);
     cubeDrawable->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
+    cubeDrawable2->setColorArray(colors);
+    cubeDrawable2->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
 
+    // Creamos un material para establecer el modo de color
     osg::ref_ptr<osg::Material> material = new osg::Material;
-    material->setColorMode(osg::Material::AMBIENT_AND_DIFFUSE); // Establecer el modo de color
-    material->setAmbient(osg::Material::FRONT_AND_BACK, osg::Vec4(0.2f, 0.2f, 0.2f, 1.0f)); // Establecer el color ambiental
-    material->setDiffuse(osg::Material::FRONT_AND_BACK, osg::Vec4(0.8f, 0.8f, 0.8f, 1.0f)); // Establecer el color difuso
+    material->setColorMode(osg::Material::AMBIENT_AND_DIFFUSE);
+    material->setAmbient(osg::Material::FRONT_AND_BACK, osg::Vec4(0.2f, 0.2f, 0.2f, 1.0f));
+    material->setDiffuse(osg::Material::FRONT_AND_BACK, osg::Vec4(0.8f, 0.8f, 0.8f, 1.0f));
 
-    // Aplicar el material al conjunto de estado
+    // Aplicamos el material a los conjuntos de estado
     stateSet->setAttributeAndModes(material, osg::StateAttribute::ON);
+    stateSet2->setAttributeAndModes(material, osg::StateAttribute::ON);
 
-    // Añadimos la forma del cubo al nodo Geode
+    // Creamos los nodos Geode
+    osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+    osg::ref_ptr<osg::Geode> geode2 = new osg::Geode;
+
+    // Añadimos las formas de los cubos a los nodos Geode
     geode->addDrawable(cubeDrawable);
+    geode2->addDrawable(cubeDrawable2);
 
-    // Creamos un nodo transform para rotar el cubo
-    osg::ref_ptr<osg::MatrixTransform> rotateTransform = new osg::MatrixTransform;
-    rotateTransform->addChild(geode);
+    // Creamos nodos Transform para rotar los cubos
+    osg::ref_ptr<osg::MatrixTransform> cubeTransform = new osg::MatrixTransform;
+    osg::ref_ptr<osg::MatrixTransform> cubeTransform2 = new osg::MatrixTransform;
+    cubeTransform->addChild(geode);
+    cubeTransform2->addChild(geode2);
 
     // Creamos un visor para visualizar la escena
-    osg::ref_ptr<osgViewer::Viewer> viewer = new osgViewer::Viewer;
+    osgViewer::Viewer viewer;
 
-    // Configurar el visor para usar un solo monitor
-    viewer->setUpViewInWindow(200, 200, 800, 800); // Tamaño de la ventana
-    //viewer->apply(new osgViewer::SingleWindow(200, 200, 800, 800, 0));
-    viewer->realize();
+    // Configuramos el tamaño de la ventana
+    viewer.setUpViewInWindow(200, 200, 1000, 800);
+    // viewer.setCameraManipulator(new osgGA::TrackballManipulator);
 
-    // Cargar tu escena y agregarla al visor
-    // osg::ref_ptr<osg::Node> scene = ...; // Tu escena
-    viewer->setSceneData(rotateTransform);
+    // Añadimos los nodos Transform al nodo raíz y lo usamos como escena
+    root->addChild(cubeTransform);
+    root->addChild(cubeTransform2);
+    viewer.setSceneData(root);
 
-    // Ejecutar el visor
-    //viewer->run();
+    // Alejamos la cámara
+    osg::Matrixd viewMatrix;
+    viewMatrix.makeTranslate(0.0, 0.0, -10.0);
+    viewer.getCamera()->setViewMatrix(viewMatrix);
 
-    // Configuramos la rotación del cubo
+    // Configuramos las rotaciones de los cubos
     float angle = 0.0f;
-    while (!viewer->done()) {
-        osg::Matrix rotationMatrix;
-        rotationMatrix.makeRotate(angle, osg::Vec3(0.0f, 1.0f, 0.0f)); // Rotación en el eje Y
-        rotateTransform->setMatrix(rotationMatrix);
-        angle += 0.01f;
+    while (!viewer.done()) {
+        osg::Matrix rotationMatrix, rotationMatrix2;
+        // Rotación en el eje Y
+        rotationMatrix.makeRotate(angle, osg::Vec3(0.0f, 1.0f, 0.0f));
+        cubeTransform->setMatrix(rotationMatrix);
         
-        // Alejar la cámara
-        osg::Matrixd viewMatrix;
-        viewMatrix.makeTranslate(0.0, 0.0, -5.0); // Modifica el último valor para ajustar la distancia
-        viewer->getCamera()->setViewMatrix(viewMatrix);
+        // Traslación del segundo cubo antes de rotarlo
+        osg::Matrix translateMatrix;
+        translateMatrix.makeTranslate(osg::Vec3(2.0f, 0.0f, 0.0f));
+        // Aplica rotación en el sistema de coordenadas local
+        rotationMatrix2 = rotationMatrix * translateMatrix; 
+        cubeTransform2->setMatrix(rotationMatrix2);
 
-        viewer->frame();
+        angle += 0.01f;
+        viewer.frame();
     }
 
     return 0;
