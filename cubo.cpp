@@ -3,6 +3,7 @@
 #include <osg/ShapeDrawable>
 #include <osgViewer/Viewer>
 #include <osg/MatrixTransform>
+#include <osg/PositionAttitudeTransform>
 #include <osgGA/TrackballManipulator>
 
 
@@ -10,6 +11,22 @@ int main() {
 
     // Creamos el nodo raíz
     osg::ref_ptr<osg::Group> root = new osg::Group;
+
+    // Creamos la nueva fuente de luz
+    osg::ref_ptr<osg::PositionAttitudeTransform> lightPAT(new osg::PositionAttitudeTransform());
+    lightPAT->setPosition(osg::Vec3(0.0, 2.0, 0.0));
+    root->addChild(lightPAT);
+
+    // Setup GL_LIGHT1. Leave GL_LIGHT0 as it is by default (enabled)
+    osg::ref_ptr<osg::LightSource> lightSource(new osg::LightSource());
+    lightSource->addChild(new osg::ShapeDrawable(new osg::Box(osg::Vec3(), 0.4f)));
+    lightSource->getLight()->setLightNum(1);
+    lightSource->getLight()->setPosition(osg::Vec4(0.0, -0.4, 0.0, 1.0));
+    lightSource->getLight()->setDiffuse(osg::Vec4(1.0, 0.0, 1.0, 1.0));
+    lightPAT->addChild(lightSource);
+
+    osg::ref_ptr<osg::StateSet> stateSet = root->getOrCreateStateSet();
+    stateSet->setMode(GL_LIGHT1, osg::StateAttribute::ON);
 
     // Creamos los cubos utilizando ShapeDrawable y Box
     osg::ref_ptr<osg::ShapeDrawable> cubeDrawable = new osg::ShapeDrawable(new osg::Box(osg::Vec3(), 1.0f));
@@ -52,7 +69,7 @@ int main() {
 
     // Establecemos el manipulador de cámara y ajustamos la distancia inicial
     osgGA::TrackballManipulator* manipulator = new osgGA::TrackballManipulator();
-    osg::Vec3d eye(0, 0, 8); // Ajustamos la posición inicial de la cámara
+    osg::Vec3d eye(0, 0, 9); // Ajustamos la posición inicial de la cámara
     osg::Vec3d center(0, 0, 0); // Ajustamos el punto hacia el que mira la cámara
     osg::Vec3d up(0, 1, 0); // Ajustamos el vector de dirección "arriba" de la cámara
     manipulator->setHomePosition(eye, center, up);
