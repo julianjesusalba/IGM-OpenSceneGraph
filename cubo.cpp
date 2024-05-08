@@ -1,10 +1,12 @@
 #include <osg/Geode>
 #include <osg/Material>
+#include <osg/Texture2D>
 #include <osg/ShapeDrawable>
 #include <osgViewer/Viewer>
 #include <osg/MatrixTransform>
 #include <osg/PositionAttitudeTransform>
 #include <osgGA/TrackballManipulator>
+#include <osgDB/ReadFile>
 
 
 int main() {
@@ -43,6 +45,18 @@ int main() {
     osg::ref_ptr<osg::StateSet> stateSetCube2 = cubeDrawable2->getOrCreateStateSet();
     stateSetCube->setAttributeAndModes(material, osg::StateAttribute::ON);
     stateSetCube2->setAttributeAndModes(material, osg::StateAttribute::ON);
+
+    // Aplicamos una textura al primer cubo
+    osg::ref_ptr<osg::Image> image = osgDB::readImageFile("texture.jpg");
+    osg::ref_ptr<osg::Texture2D> tex(new osg::Texture2D());
+    tex->setImage(image);
+    stateSetCube->setTextureAttributeAndModes(0, tex);
+
+    // Aplicamos otra textura al segundo cubo
+    osg::ref_ptr<osg::Image> image2 = osgDB::readImageFile("texture2.jpg");
+    osg::ref_ptr<osg::Texture2D> tex2(new osg::Texture2D());
+    tex2->setImage(image2);
+    stateSetCube2->setTextureAttributeAndModes(0, tex2);
 
     // Creamos los nodos Geode
     osg::ref_ptr<osg::Geode> geode = new osg::Geode;
