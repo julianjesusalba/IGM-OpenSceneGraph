@@ -1,35 +1,15 @@
 #include <osg/Geode>
-#include <osg/Geometry>
 #include <osg/Material>
 #include <osg/ShapeDrawable>
 #include <osgViewer/Viewer>
 #include <osg/MatrixTransform>
+#include <osgGA/TrackballManipulator>
+
 
 int main() {
 
-    // Creamos el nodo raíz
-    osg::ref_ptr<osg::Group> root = new osg::Group;
-
-    // Creamos los cubo utilizando ShapeDrawable y Box
+    // Creamos el cubo utilizando ShapeDrawable y Box
     osg::ref_ptr<osg::ShapeDrawable> cubeDrawable = new osg::ShapeDrawable(new osg::Box(osg::Vec3(), 1.0f));
-    osg::ref_ptr<osg::ShapeDrawable> cubeDrawable2 = new osg::ShapeDrawable(new osg::Box(osg::Vec3(), 0.8f));
-
-    // Creamos los estados para los colores
-    osg::ref_ptr<osg::StateSet> stateSet = cubeDrawable->getOrCreateStateSet();
-    osg::ref_ptr<osg::StateSet> stateSet2 = cubeDrawable->getOrCreateStateSet();
-
-    // Añadimos los colores a las caras de los cubos
-    osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
-    colors->push_back(osg::Vec4(1.0f, 0.0f, 0.0f, 1.0f)); // Rojo
-    colors->push_back(osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f)); // Verde
-    colors->push_back(osg::Vec4(0.0f, 0.0f, 1.0f, 1.0f)); // Azul
-    colors->push_back(osg::Vec4(1.0f, 1.0f, 0.0f, 1.0f)); // Amarillo
-    colors->push_back(osg::Vec4(1.0f, 0.0f, 1.0f, 1.0f)); // Magenta
-    colors->push_back(osg::Vec4(0.0f, 1.0f, 1.0f, 1.0f)); // Cyan
-    cubeDrawable->setColorArray(colors);
-    cubeDrawable->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
-    cubeDrawable2->setColorArray(colors);
-    cubeDrawable2->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
 
     // Creamos un material para establecer el modo de color
     osg::ref_ptr<osg::Material> material = new osg::Material;
@@ -37,55 +17,41 @@ int main() {
     material->setAmbient(osg::Material::FRONT_AND_BACK, osg::Vec4(0.2f, 0.2f, 0.2f, 1.0f));
     material->setDiffuse(osg::Material::FRONT_AND_BACK, osg::Vec4(0.8f, 0.8f, 0.8f, 1.0f));
 
-    // Aplicamos el material a los conjuntos de estado
-    stateSet->setAttributeAndModes(material, osg::StateAttribute::ON);
-    stateSet2->setAttributeAndModes(material, osg::StateAttribute::ON);
+    // Aplicamos el material al conjunto de estado
+    osg::ref_ptr<osg::StateSet> stateSetCube = cubeDrawable->getOrCreateStateSet();
+    stateSetCube->setAttributeAndModes(material, osg::StateAttribute::ON);
 
-    // Creamos los nodos Geode
+    // Creamos un nodo Geode y le añadimos la forma del cubo
     osg::ref_ptr<osg::Geode> geode = new osg::Geode;
-    osg::ref_ptr<osg::Geode> geode2 = new osg::Geode;
-
-    // Añadimos las formas de los cubos a los nodos Geode
     geode->addDrawable(cubeDrawable);
-    geode2->addDrawable(cubeDrawable2);
 
-    // Creamos nodos Transform para rotar los cubos
+    // Creamos un nodo MatrixTransform para rotar el cubo
     osg::ref_ptr<osg::MatrixTransform> cubeTransform = new osg::MatrixTransform;
-    osg::ref_ptr<osg::MatrixTransform> cubeTransform2 = new osg::MatrixTransform;
     cubeTransform->addChild(geode);
-    cubeTransform2->addChild(geode2);
 
-    // Creamos un visor para visualizar la escena
+    // Creamos un visor para visualizar la escena y configuramos el tamaño de la ventana
     osgViewer::Viewer viewer;
-
-    // Configuramos el tamaño de la ventana
     viewer.setUpViewInWindow(200, 200, 1000, 800);
-    // viewer.setCameraManipulator(new osgGA::TrackballManipulator);
 
-    // Añadimos los nodos Transform al nodo raíz y lo usamos como escena
-    root->addChild(cubeTransform);
-    root->addChild(cubeTransform2);
-    viewer.setSceneData(root);
+    // Usamos como escena el nodo MatrixTransform
+    viewer.setSceneData(cubeTransform);
 
-    // Alejamos la cámara
-    osg::Matrixd viewMatrix;
-    viewMatrix.makeTranslate(0.0, 0.0, -10.0);
-    viewer.getCamera()->setViewMatrix(viewMatrix);
+    // Establecemos el manipulador de cámara y ajustamos la distancia inicial
+    osgGA::TrackballManipulator* manipulator = new osgGA::TrackballManipulator();
+    osg::Vec3d eye(0, 0, 5); // Ajustamos la posición inicial de la cámara
+    osg::Vec3d center(0, 0, 0); // Ajustamos el punto hacia el que mira la cámara
+    osg::Vec3d up(0, 1, 0); // Ajustamos el vector de dirección "arriba" de la cámara
+    manipulator->setHomePosition(eye, center, up);
+    viewer.setCameraManipulator(manipulator);
 
-    // Configuramos las rotaciones de los cubos
+    // Configuramos la rotación del cubo
     float angle = 0.0f;
     while (!viewer.done()) {
-        osg::Matrix rotationMatrix, rotationMatrix2;
+        osg::Matrix rotationMatrix;
+
         // Rotación en el eje Y
         rotationMatrix.makeRotate(angle, osg::Vec3(0.0f, 1.0f, 0.0f));
         cubeTransform->setMatrix(rotationMatrix);
-        
-        // Traslación del segundo cubo antes de rotarlo
-        osg::Matrix translateMatrix;
-        translateMatrix.makeTranslate(osg::Vec3(2.0f, 0.0f, 0.0f));
-        // Aplica rotación en el sistema de coordenadas local
-        rotationMatrix2 = rotationMatrix * translateMatrix; 
-        cubeTransform2->setMatrix(rotationMatrix2);
 
         angle += 0.01f;
         viewer.frame();
